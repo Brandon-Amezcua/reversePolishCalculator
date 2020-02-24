@@ -20,19 +20,30 @@ void ungetch_(int c) {
 }
 
 int getop(char* s) {
-  int i, c;
+  int i, c, next;
   while ((s[0] = c = getch_()) == ' ' || c == '\t') { }  // skip whitespace
   s[1] = '\0';
 
-  if (!isdigit(c) && c != '.') { return c; }  // if not a digit, return
+  if (!isdigit(c) && c != '.' && c != '-') { return c; }  // if not a digit, return
+  if(c == '-')
+  {
+      next = getch_();
+      if(!isdigit(next) && next != '.')
+      {
+         return c;
+      }
+      c = next;
+  }
+  else
+  {
+      c = getch_();
+  }
+  while(isdigit(s[++i] = c)) /* before the decimal*/
+      c = getch_();
+  if(c == '.')                     /* after the decimal*/
+      while(isdigit(s[++i] = c = getch_()))
+                  ;
 
-  i = 0;
-  if (isdigit(c)) {  // get digits before '.'
-    while (isdigit(s[++i] = c = getch_())) { }
-  }
-  if (c == '.') {    // get digits after decimal (if any)
-    while (isdigit(s[++i] = c = getch_())) { }
-  }
   s[i] = '\0';
   if (c != EOF) { ungetch_(c); }
   return NUMBER;      // return type is NUMBER, number stored in s
@@ -48,9 +59,34 @@ void push(double f) {
   val[sp++] = f;
 }
 
+void peek(void){
+  if (sp > 0)
+    printf("Top of stack contains: %8g\n", val[sp - 1]);
+}
+
+void dupe(void) {
+  double temp = pop();
+
+  push(temp);
+  push(temp);
+}
+
+void swap(void) {
+  double first = pop();
+  double second = pop();
+
+  push(first);
+  push(second);
+}
+
+void clear(void) {
+  sp = 0;
+}
+
 void rpn(void) {
   int type;
   double op2;
+  double op3;
   char s[BUFSIZ];
 
   while ((type = getop(s)) != EOF) {
@@ -64,7 +100,16 @@ void rpn(void) {
         if ((op2 = pop()) == 0.0) { fprintf(stderr, "divide by zero\n");  break; }
         push(pop() / op2);
         break;
-      case '%':     push(fmod(pop(), pop()));        break;
+      case '%':     push(fmod(pop(), pop()));   break;
+      case 's':     push(sin(pop()));           break;
+      case 'c':     push(cos(pop()));           break;
+      case 't':     push(tan(pop()));           break;
+      case '^':
+        if ((op2 = pop()) == 0.0) {push(1);     break;}
+        if ((op3 = pop()) == 0.0) {push(0.0);   break;}
+        else
+                    push(pow(op3, op2));        break;
+      case 'e':     push(exp(pop()));           break;
       default:      fprintf(stderr, "unknown command %s\n", s);  break;
     }
   }
