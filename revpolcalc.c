@@ -2,10 +2,16 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+#include <string.h>
+
+#include "revpolcalc.h"
 
 #define MAXOP   100    /* max size of operand/operator */
 #define NUMBER '0'     /* signal that a number was found */
 #define MAXVAL  100
+#define MATH '1'
+#define STACK '2'
+#define VARIABLE '3'
 
 size_t sp = 0;   // aka unsigned long -- printf using %zu
 double val[MAXVAL];   // stack of values
@@ -13,16 +19,51 @@ double val[MAXVAL];   // stack of values
 char buf[BUFSIZ];
 size_t bufp = 0;
 
+double variables[MAXOP];
+
 int getch_(void) { return (bufp > 0) ? buf[--bufp] : getchar(); }
+
 void ungetch_(int c) {
   if (bufp >= BUFSIZ) { fprintf(stderr, "ungetch: too many characters\n");  return; }
   buf[bufp++] = c;
+}
+
+void math(char* s) {
+  double op1, op2, result = 0;
+  if (strcmp(s, "sin") == 0) {
+    result = sin(pop());
+  } else if (strcmp(s, "cos") == 0) {
+    result = cos(pop());
+  } else if (strcmp(s, "tan") == 0) {
+    result = tan(pop());
+  } else if (strcmp(s, "asin") == 0) {
+    result = asin(pop());
+  } else if (strcmp(s, "acos") == 0) {
+    result = acos(pop());
+  } else if (strcmp(s, "sinh") == 0) {
+    result = sinh(pop());
+  } else if (strcmp(s, "cosh") == 0) {
+    result = cosh(pop());
+  } else if (strcmp(s, "exp") == 0) {
+    result = exp(pop());
+  }
+}
+
+void build_string(char* s) {
+  int c, i = 0;
+  while (isalpha(s[++i] = c = getch_())) {
+    s[i] = '\0';
+  }
 }
 
 int getop(char* s) {
   int i, c, next;
   while ((s[0] = c = getch_()) == ' ' || c == '\t') { }  // skip whitespace
   s[1] = '\0';
+
+  if (c == '@') { build_string(s); return STACK;}
+  if (c == '=' || c == '?') {build_string(s); return VARIABLE;}
+  if (isalpha(c)) { build_string(s); return MATH;}
 
   if (!isdigit(c) && c != '.' && c != '-') { return c; }  // if not a digit, return
   if(c == '-')
@@ -83,6 +124,21 @@ void clear(void) {
   sp = 0;
 }
 
+void variable (char* s) {
+  if (*s == '=') {
+    variables[*++s - 'A'] = pop();
+  } else if (*s == '?') {
+    push(variables[*++s - 'A']);
+  }
+}
+
+void stack(char* s) {
+  ++s;
+  if (strcmp(s, "swap") == 0) {
+    swap();
+  }
+}
+
 void rpn(void) {
   int type;
   double op2;
@@ -101,15 +157,15 @@ void rpn(void) {
         push(pop() / op2);
         break;
       case '%':     push(fmod(pop(), pop()));   break;
-      case 's':     push(sin(pop()));           break;
-      case 'c':     push(cos(pop()));           break;
-      case 't':     push(tan(pop()));           break;
+      case '!':     peek();                     break;
       case '^':
         if ((op2 = pop()) == 0.0) {push(1);     break;}
         if ((op3 = pop()) == 0.0) {push(0.0);   break;}
         else
                     push(pow(op3, op2));        break;
-      case 'e':     push(exp(pop()));           break;
+      case MATH:    math(s);                    break;
+      case STACK:   stack(s);                   break;
+      case VARIABLE: variable(s);               break;
       default:      fprintf(stderr, "unknown command %s\n", s);  break;
     }
   }
