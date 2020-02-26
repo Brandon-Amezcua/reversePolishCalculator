@@ -29,9 +29,13 @@ void ungetch_(int c) {
 }
 
 void math(char* s) {
+  //printf("this is the input string %s\n", s);
   double op1, op2, result = 0;
+  //printf("\nentered math function\n");
   if (strcmp(s, "sin") == 0) {
+    //printf("%f \n", sin(pop()));
     result = sin(pop());
+    //printf("sin detected");
   } else if (strcmp(s, "cos") == 0) {
     result = cos(pop());
   } else if (strcmp(s, "tan") == 0) {
@@ -46,21 +50,25 @@ void math(char* s) {
     result = cosh(pop());
   } else if (strcmp(s, "exp") == 0) {
     result = exp(pop());
+  } else {
+    printf("Unknown math function\n");
   }
+  push(result);
 }
 
 void build_string(char* s) {
   int c, i = 0;
-  while (isalpha(s[++i] = c = getch_())) {
-    s[i] = '\0';
-  }
+  while (isalpha(s[++i] = c = getch_())) {}
+  s[i] = '\0';
+  //printf("this is s %s\n", s);
 }
 
 int getop(char* s) {
   int i, c, next;
   while ((s[0] = c = getch_()) == ' ' || c == '\t') { }  // skip whitespace
   s[1] = '\0';
-
+  //printf("c = %c\n", c);
+  //printf("s = %s\n", s);
   if (c == '@') { build_string(s); return STACK;}
   if (c == '=' || c == '?') {build_string(s); return VARIABLE;}
   if (isalpha(c)) { build_string(s); return MATH;}
@@ -136,6 +144,12 @@ void stack(char* s) {
   ++s;
   if (strcmp(s, "swap") == 0) {
     swap();
+  } else if (strcmp(s, "clear") == 0) {
+    clear();
+  } else if (strcmp(s, "dupe") == 0) {
+    dupe();
+  } else if (strcmp(s, "peek") == 0) {
+    peek();
   }
 }
 
